@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>queue-chatgpt</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <h1>queue ChatGPT</h1>
+    
+    <div class="input-group">
+      <input type="text" id="messageInput" placeholder="Enter your message">
+      <button id="addButton">Add</button>
+    </div>
+
+    <div class="queue-container">
+      <h2>Message Queue</h2>
+      <ul id="messageList"></ul>
+    </div>
+
+    <div class="controls">
+      <button id="playButton" class="primary">Start Queue</button>
+      <button id="clearButton">Clear All</button>
+    </div>
+
+    <div class="settings">
+      <div class="wait-time">
+        <label for="minWaitTime">Minimum wait time (seconds):</label>
+        <input type="number" id="minWaitTime" min="1" value="3">
+      </div>
+      <div class="import-export">
+        <button id="exportButton">Export List</button>
+        <button id="importButton">Import List</button>
+        <input type="file" id="fileInput" accept=".json" style="display: none;">
+      </div>
+    </div>
+
+    <div class="status" id="status"></div>
+    
+    <div class="keyboard-shortcuts">
+      <h3>Keyboard Shortcuts:</h3>
+      <ul>
+        <li><kbd>Ctrl/Cmd + Enter</kbd> - Start/Pause Queue</li>
+        <li><kbd>Ctrl/Cmd + Shift + C</kbd> - Clear Queue</li>
+        <li><kbd>Ctrl/Cmd + E</kbd> - Export Queue</li>
+        <li><kbd>Ctrl/Cmd + I</kbd> - Import Queue</li>
+      </ul>
+    </div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html> 
