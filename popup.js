@@ -290,7 +290,7 @@ Create a list of 10 innovative business ideas for 2024
 Design a solution for reducing food waste in restaurants
 Compare and contrast Python and JavaScript for web development
 
-Generate 10 diverse and interesting prompts covering topics like creative writing, problem-solving, learning, productivity, art, science, or fun activities. Keep each prompt concise and actionable.`;
+Generate 10 diverse and interesting prompts to generate images of animals, include at start "generate image of"`;
 
   try {
     // Copy the prompt template to clipboard
