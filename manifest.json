@@ -1,12 +1,14 @@
 {
   "manifest_version": 3,
   "name": "queue-chatgpt",
-  "version": "1.0",
+  "version": "1.1",
   "description": "Manage and automate ChatGPT messages in a queue",
   "permissions": [
     "activeTab",
     "storage",
-    "tabs"
+    "tabs",
+    "clipboardRead",
+    "clipboardWrite"
   ],
   "host_permissions": [
     "https://chatgpt.com/*"

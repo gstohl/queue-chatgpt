@@ -1,12 +1,13 @@
 let messageQueue = [];
 let isProcessing = false;
 let minWaitTime = 3000; // Default 3 seconds
+let imageQueueMode = false; // Image queue mode toggle
 let retryAttempts = {}; // Track retry attempts for each message
 const MAX_RETRIES = 3;
 
 document.addEventListener('DOMContentLoaded', () => {
   // Load saved queue and settings from storage
-  chrome.storage.local.get(['messageQueue', 'minWaitTime'], (result) => {
+  chrome.storage.local.get(['messageQueue', 'minWaitTime', 'imageQueueMode'], (result) => {
     if (result.messageQueue) {
       messageQueue = result.messageQueue;
       updateQueueDisplay();
@@ -14,6 +15,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (result.minWaitTime) {
       minWaitTime = result.minWaitTime;
       document.getElementById('minWaitTime').value = minWaitTime / 1000;
+    }
+    if (result.imageQueueMode !== undefined) {
+      imageQueueMode = result.imageQueueMode;
+      document.getElementById('imageQueueToggle').checked = imageQueueMode;
     }
   });
 
@@ -47,6 +52,13 @@ document.addEventListener('DOMContentLoaded', () => {
     setStatus(`Minimum wait time set to ${seconds} seconds`);
   });
 
+  // Image queue mode toggle
+  document.getElementById('imageQueueToggle').addEventListener('change', (e) => {
+    imageQueueMode = e.target.checked;
+    chrome.storage.local.set({ imageQueueMode });
+    setStatus(`Image queue mode ${imageQueueMode ? 'enabled' : 'disabled'}`);
+  });
+
   // Setup keyboard shortcuts
   document.addEventListener('keydown', (e) => {
     // Ctrl/Cmd + Enter to start/pause queue
@@ -75,6 +87,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Check current tab and update status
   updateCurrentTabInfo();
+  
+  // Prompt generator button
+  document.getElementById('promptGeneratorButton').addEventListener('click', generatePromptList);
+  
+  // Paste from clipboard button
+  document.getElementById('pasteButton').addEventListener('click', pasteFromClipboard);
 });
 
 function updateCurrentTabInfo() {
@@ -260,6 +278,94 @@ function importQueue(e) {
   e.target.value = ''; // Reset file input
 }
 
+async function generatePromptList() {
+  const promptTemplate = `Generate a list of prompts that I can use with the queue-chatgpt Chrome extension. 
+
+IMPORTANT: Format your response as a simple list with each prompt on its own line. Do not use numbers, bullets, or any prefixes. Just one prompt per line.
+
+Example of correct format:
+Write a short story about a time traveler stuck in ancient Rome
+Explain how photosynthesis works in simple terms
+Create a list of 10 innovative business ideas for 2024
+Design a solution for reducing food waste in restaurants
+Compare and contrast Python and JavaScript for web development
+
+Generate 10 diverse and interesting prompts covering topics like creative writing, problem-solving, learning, productivity, art, science, or fun activities. Keep each prompt concise and actionable.`;
+
+  try {
+    // Copy the prompt template to clipboard
+    await navigator.clipboard.writeText(promptTemplate);
+    setStatus('Helper prompt copied! Paste it in ChatGPT to generate a prompt list.');
+  } catch (error) {
+    console.error('Failed to copy to clipboard:', error);
+    setStatus('Failed to copy to clipboard. Please check permissions.');
+  }
+}
+
+async function pasteFromClipboard() {
+  try {
+    const text = await navigator.clipboard.readText();
+    
+    if (!text || text.trim().length === 0) {
+      setStatus('Clipboard is empty');
+      return;
+    }
+    
+    // Check if it's a JSON format
+    try {
+      const data = JSON.parse(text);
+      if (Array.isArray(data)) {
+        // It's an array of messages
+        data.forEach(msg => {
+          if (typeof msg === 'string' && msg.trim()) {
+            messageQueue.push(msg.trim());
+          }
+        });
+      } else if (data.queue && Array.isArray(data.queue)) {
+        // It's our export format
+        data.queue.forEach(msg => {
+          if (typeof msg === 'string' && msg.trim()) {
+            messageQueue.push(msg.trim());
+          }
+        });
+      }
+      chrome.storage.local.set({ messageQueue });
+      updateQueueDisplay();
+      setStatus(`Imported ${data.queue ? data.queue.length : data.length} messages from clipboard`);
+    } catch (jsonError) {
+      // Not JSON, treat as plain text with line breaks
+      const lines = text.split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0);
+      
+      if (lines.length === 1) {
+        // Single line - add as one message
+        messageQueue.push(lines[0]);
+        chrome.storage.local.set({ messageQueue });
+        updateQueueDisplay();
+        setStatus('Added 1 message from clipboard');
+      } else {
+        // Multiple lines - add each as a separate message
+        // Remove common list prefixes like "1.", "•", "-", etc.
+        const cleanedLines = lines.map(line => {
+          return line.replace(/^[\d]+\.\s*/, '') // Remove "1. ", "2. ", etc.
+                    .replace(/^[-•*]\s*/, '')    // Remove "- ", "• ", "* "
+                    .replace(/^\[\s*\]\s*/, '')  // Remove "[ ] "
+                    .trim();
+        }).filter(line => line.length > 0);
+        
+        cleanedLines.forEach(line => messageQueue.push(line));
+        chrome.storage.local.set({ messageQueue });
+        updateQueueDisplay();
+        setStatus(`Added ${cleanedLines.length} messages from clipboard`);
+      }
+    }
+  } catch (error) {
+    console.error('Clipboard error:', error);
+    setStatus('Failed to read clipboard. Please check permissions.');
+  }
+}
+
 function processQueue() {
   if (!isProcessing || messageQueue.length === 0) {
     isProcessing = false;
@@ -286,7 +392,8 @@ function processQueue() {
     
     chrome.tabs.sendMessage(tabs[0].id, { 
       action: 'processMessage',
-      message: message
+      message: message,
+      imageQueueMode: imageQueueMode
     }, async (response) => {
       if (chrome.runtime.lastError) {
         // Handle connection errors

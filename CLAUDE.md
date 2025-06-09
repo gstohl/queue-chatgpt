@@ -26,12 +26,24 @@ This is a Chrome extension that allows users to queue multiple messages for Chat
 3. **Import/Export**
    - Export queue to JSON file
    - Import queue from JSON file
+   - Import from clipboard (supports multiple formats)
    - Preserves wait time settings
 
 4. **Status Monitoring**
    - Connection status to ChatGPT
    - Current tab information display
    - Processing status updates
+
+5. **Helper Tools**
+   - Copy helper prompt for generating formatted prompt lists
+   - Smart clipboard parsing (removes numbers, bullets, etc.)
+   - Image queue mode for handling image generation delays
+
+6. **Image Queue Mode**
+   - Detects images in conversation
+   - Waits up to 1 minute for image generation
+   - Prevents rate limiting issues
+   - Toggle option in settings
 
 ## Technical Details
 
@@ -55,15 +67,26 @@ This is a Chrome extension that allows users to queue multiple messages for Chat
 - `activeTab` - Interact with current tab
 - `storage` - Persist queue data
 - `tabs` - Query tab information
+- `clipboardRead` - Read clipboard for import
+- `clipboardWrite` - Write helper prompts to clipboard
 - Host permission for `https://chatgpt.com/*`
 
-## Current Issues & Improvements Needed
+## Recent Improvements (v1.1)
 
-### Critical Issues
-1. **Extension Name Mismatch** - Fixed: Extension is now properly named "queue-chatgpt"
-2. **Missing Icons** - Empty icon definitions in manifest.json
-3. **Error Handling** - Limited error recovery if ChatGPT UI changes
-4. **Response Detection** - Relies on presence of "Stop streaming" button which may be fragile
+### Completed Features
+1. **Clipboard Import** - Smart parsing of various list formats
+2. **Helper Prompt Generator** - Copies formatting instructions to clipboard
+3. **Image Queue Mode** - Waits for image generation to complete
+4. **Enhanced UI Detection** - Multiple selector fallbacks for ChatGPT elements
+5. **Better Error Handling** - Retry mechanism with exponential backoff
+6. **Dark Mode Support** - Automatic theme detection
+
+## Current Issues & Potential Improvements
+
+### Known Limitations
+1. **Icon Transparency** - Fixed by auto-cropping transparent margins
+2. **Response Detection** - Still relies on UI elements that may change
+3. **Rate Limiting** - No built-in detection of ChatGPT rate limits beyond image mode
 
 ### Suggested Improvements
 1. **Enhanced Message Processing**

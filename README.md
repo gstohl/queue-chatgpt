@@ -7,6 +7,9 @@ A Chrome extension that allows you to queue multiple messages for ChatGPT and pr
 - 🚀 **Message Queue Management** - Add, remove, and reorder messages in a queue
 - ⏯️ **Automated Processing** - Send messages automatically with configurable wait times
 - 💾 **Import/Export** - Save and load message queues as JSON files
+- 📋 **Clipboard Import** - Paste prompts from clipboard with smart formatting detection
+- 🎯 **Helper Prompt Generator** - Copy a template to generate properly formatted prompt lists
+- 🖼️ **Image Queue Mode** - Wait for image generation to complete before proceeding
 - 🔄 **Retry Mechanism** - Automatic retry with exponential backoff for failed messages
 - 🌓 **Dark/Light Mode** - Automatically follows system theme preferences
 - ⌨️ **Keyboard Shortcuts** - Quick actions for power users
@@ -43,6 +46,28 @@ cd queue-chatgpt
 3. **Add Messages** - Type messages and click "Add" or press Enter
 4. **Start Queue** - Click "Start Queue" to begin processing
 5. **Monitor Progress** - Watch as messages are sent automatically
+
+### Quick Actions
+
+#### Copy Helper Prompt
+1. Click "Copy Helper Prompt" button
+2. Paste into ChatGPT to generate a formatted list of prompts
+3. Copy ChatGPT's response
+4. Click "Paste from Clipboard" to import all prompts
+
+#### Paste from Clipboard
+Supports multiple formats:
+- Plain text (one prompt per line)
+- Numbered lists (automatically removes numbers)
+- Bullet points (automatically removes bullets)
+- JSON arrays
+- Previously exported queue files
+
+#### Image Queue Mode
+Enable this when generating images to avoid rate limits:
+- Toggle "Image Queue Mode" in settings
+- Waits up to 1 minute for image generation
+- Automatically detects new images in the conversation
 
 ### Keyboard Shortcuts
 
@@ -124,6 +149,14 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - Inspired by productivity automation needs
 
 ## Changelog
+
+### Version 1.1
+- Added clipboard import functionality
+- Added helper prompt generator for creating prompt lists
+- Added image queue mode for handling image generation
+- Improved UI with quick action buttons
+- Enhanced clipboard parsing (supports various list formats)
+- Added clipboard permissions
 
 ### Version 1.0
 - Initial release

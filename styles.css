@@ -80,6 +80,28 @@ h2 {
   gap: 8px;
 }
 
+.quick-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.quick-actions button {
+  flex: 1;
+  font-size: 13px;
+  padding: 6px 12px;
+}
+
+button.secondary {
+  background-color: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+button.secondary:hover {
+  background-color: var(--button-bg);
+  color: var(--text-primary);
+}
+
 input[type="text"] {
   flex: 1;
   padding: 8px 12px;
@@ -257,6 +279,34 @@ button.primary:hover {
   font-size: 14px;
   background-color: var(--bg-primary);
   color: var(--text-primary);
+}
+
+.image-queue-toggle {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.image-queue-toggle label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.image-queue-toggle input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.image-queue-toggle small {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-style: italic;
+  margin-left: 24px;
 }
 
 .import-export {

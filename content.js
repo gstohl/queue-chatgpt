@@ -1,7 +1,11 @@
+// Track images in the conversation
+let conversationImages = new Set();
+
 // Listen for messages from the popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'processMessage') {
     console.log('📥 Received message to process:', request.message);
+    console.log('🎨 Image queue mode:', request.imageQueueMode);
     
     // Validate message before processing
     if (!request.message || typeof request.message !== 'string' || request.message.trim().length === 0) {
@@ -17,7 +21,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       return false;
     }
     
-    processMessage(request.message)
+    // Count current images before processing
+    if (request.imageQueueMode) {
+      countCurrentImages();
+    }
+    
+    processMessage(request.message, request.imageQueueMode)
       .then(() => {
         console.log('✅ Message processed successfully');
         sendResponse({ success: true });
@@ -30,7 +39,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
-async function processMessage(message) {
+async function processMessage(message, imageQueueMode) {
   console.log('🔍 Looking for ChatGPT input...');
   
   // Try multiple selectors for better compatibility
@@ -145,11 +154,11 @@ async function processMessage(message) {
 
   // Wait for the response to complete
   console.log('⏳ Waiting for response...');
-  await waitForResponse();
+  await waitForResponse(imageQueueMode);
   console.log('✅ Response complete');
 }
 
-async function waitForResponse() {
+async function waitForResponse(imageQueueMode) {
   return new Promise((resolve, reject) => {
     const maxWaitTime = 120000; // 2 minutes timeout
     const startTime = Date.now();
@@ -184,8 +193,23 @@ async function waitForResponse() {
       if (!isStreaming && !messageCountChanged) {
         // No streaming indicators and message count stable
         if (Date.now() - startTime > 2000) { // Wait at least 2 seconds
-          console.log(`✅ Response complete after ${checkCount} checks (${Date.now() - startTime}ms)`);
-          resolve();
+          
+          // If image queue mode, check for new images
+          if (imageQueueMode) {
+            console.log('🎨 Checking for image generation...');
+            waitForImageGeneration()
+              .then(() => {
+                console.log(`✅ Response complete with image after ${checkCount} checks (${Date.now() - startTime}ms)`);
+                resolve();
+              })
+              .catch((error) => {
+                console.error('❌ Image wait failed:', error);
+                resolve(); // Continue anyway
+              });
+          } else {
+            console.log(`✅ Response complete after ${checkCount} checks (${Date.now() - startTime}ms)`);
+            resolve();
+          }
         } else {
           console.log('⏳ Waiting for response stabilization...');
           setTimeout(checkCompletion, 300);
@@ -208,5 +232,67 @@ async function waitForResponse() {
       console.error(`❌ Response timeout after ${maxWaitTime/1000} seconds`);
       reject(new Error('Response timeout'));
     }, maxWaitTime);
+  });
+}
+
+function countCurrentImages() {
+  // Clear previous count and recount all images in the conversation
+  conversationImages.clear();
+  
+  // Find all images in the conversation
+  const imageSelectors = [
+    'img[alt*="Generated"]',
+    'img[alt*="Image"]',
+    '[data-message-author-role="assistant"] img',
+    '.markdown img',
+    'img[src*="dalle"]',
+    'img[src*="oaiusercontent"]'
+  ];
+  
+  imageSelectors.forEach(selector => {
+    const images = document.querySelectorAll(selector);
+    images.forEach(img => {
+      if (img.src && !img.src.includes('avatar') && !img.src.includes('logo')) {
+        conversationImages.add(img.src);
+      }
+    });
+  });
+  
+  console.log(`📸 Current image count: ${conversationImages.size}`);
+}
+
+async function waitForImageGeneration() {
+  return new Promise((resolve, reject) => {
+    const maxRetries = 10; // 10 retries = 1 minute total
+    const retryDelay = 6000; // 6 seconds between retries
+    let retryCount = 0;
+    
+    const initialImageCount = conversationImages.size;
+    console.log(`🎨 Initial image count: ${initialImageCount}`);
+    
+    const checkForNewImage = () => {
+      retryCount++;
+      
+      // Count current images again
+      const previousCount = conversationImages.size;
+      countCurrentImages();
+      const currentCount = conversationImages.size;
+      
+      console.log(`🔍 Image check ${retryCount}/${maxRetries}: ${currentCount} images (was ${previousCount})`);
+      
+      if (currentCount > initialImageCount) {
+        console.log(`✅ New image detected! (${currentCount - initialImageCount} new)`);
+        resolve();
+      } else if (retryCount >= maxRetries) {
+        console.log(`⏱️ Image generation timeout after ${maxRetries} attempts`);
+        reject(new Error('Image generation timeout'));
+      } else {
+        console.log(`⏳ No new image yet, waiting ${retryDelay/1000}s before retry...`);
+        setTimeout(checkForNewImage, retryDelay);
+      }
+    };
+    
+    // Start checking after a small initial delay
+    setTimeout(checkForNewImage, 2000);
   });
 } 
